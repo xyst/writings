@@ -1,1 +1,7 @@
+*.class
+*.core
+*.elf
+*.hi
+*.o
+*.stderr
 .*.swp
