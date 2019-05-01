@@ -2,18 +2,16 @@
 
 Given:  
 
-- a random programmer on the Internet, that's me
-- some less popular puzzles on LeetCode, a competitive programming website
-- a couple of minutes on each puzzle to have a workable idea
-- no TAOCP at hand
+- A random programmer on the Internet, that's me
+- Some less popular puzzles on LeetCode, a competitive programming website
+- A couple of minutes on each puzzle to have a workable idea
+- No TAOCP at hand
 
 This is how one programmer approaches the puzzles.
 
 Please beware that I have neither proved nor tested them, and have omitted minor details.
 
-To the spirit of:
-
-![Obvious, by Abstruse Goose](https://abstrusegoose.com/230)
+In the spirit of: [Obvious, by Abstruse Goose](https://abstrusegoose.com/230)
 
 ## Status
 
@@ -24,17 +22,19 @@ Ongoing.
 - Basic data structures
 - Decompose a thing into smaller things
 - Do it incrementally
+- Induction, build on top of a simpler problem
 - Remove the trivial
 - Sorting
 - Try basic examples
 - Try evil examples
+- Work backwards
 
 ## Caveats
 
-- Always read the "Note" section first, size constraints can change the game.
-- "eerie" is a "sub-sequence" of "exercise".
+- Always read the "Note" section, size constraints can change the game.
+- "eerie" is a "subsequence" of "exercise".
 
-## 761. Shuffle "special" sub-strings (whose 1-count "=" 0-count, and ">=" for all prefixes)
+## 761. Shuffle "special" substrings (whose 1-count "=" 0-count, and ">=" for all prefixes)
 
 - When can we break a "special" string into two smaller ones...
 - "1100" contains "10" in the middle, but such case doesn't matter.
@@ -82,17 +82,72 @@ Just translate the spec into code. A simple expression evaluator.
 
 Just interval calculation. A sorted set of pairs, each having a count.
 
+## 727. Subsequence with the shortest span
+
+- Build an index for each letter.
+- Search letter by letter using the index.
+- A shortcut: when looking for the target "ab...", skip "axxayyb" ahead to "ayyb".
+- But this doesn't accumulate, working from target "ab..." to target "abc..." will need backtracking.
+- So we should search in reverse instead, finding the nearest previous letter one by one.
+- No, searching in reverse has exactly the same problem.
+- So, go forward finding the first occurrence letter by letter, then, start from the last found letter, search letter by letter in reverse; this is a local minimum span.
+- Move forward by 1 letter.
+- Repeat, forward-then-backward each time.
+
 ## 726. Count the atoms in a chemical formula
 
 An expression evaluator.
 
-## 716. A stack with pop-max
+## 716. A stack that supports pop-max
 
-- Doubly linked list provides fast removal of "max" in the middle.
+- Doubly linked list, so that it is fast to remove "max" in the middle.
 - Each element has an extra pointer to the previous "max".
-- So push and pop are good, easy to find the max.
+- Then push and pop are good, easy to find the max.
 - However, an evil example: push from large to small, pop-max one by one.
-- After pop-max, it is slow to update the extra pointers.
+- After pop-max, it is slow to update all the extra pointers.
 - Need a sorted map to look up the last position of each unique element, including the max.
-- The extra pointer is to the previous equal value.
+- The extra pointer points to the previous equal value.
+
+## 715. Interval arithmetic
+
+A sorted set of pairs.
+
+## 711. Count the different shapes of connected pieces
+
+- Walk through the examples.
+- Flood fill, cut out each piece and put it into a bounding box full of 0s.
+- Canonicalise by reading each piece-inside-bounding-box in all 8 ways, and select the smallest bit string.
+- Speedup: firstly, categorise by the bounding box shape, and then the 1-count.
+- Speedup: then, only if a category contains multiple pieces, canonicalise them and sort.
+
+## 699. Height of square Tetris
+
+- Build a histogram.
+- Interval calculation. Sorted set of pairs, each having a height.
+
+## 689. Max sum of 3 sections of the same length, non-overlapping
+
+- Unspecified, but the example indicates that a "subarray" is a consecutive section, unlike a "subsequence".
+- Run through the input once, calculate the value of each length-k section.
+- Sections of high values can overlap; sort the sections by value first?
+- Can't tell how to use the sorted sections effectively.
+- Induction? If we have the answer for "max sum of 1 section..." for all prefix ranges, we can answer "max sum of 2 sections..." for all prefix ranges?
+- Yes.
+
+## 685. Directed tree with an extra edge, find and remove that edge
+
+- Walk through the examples.
+- Must not create two roots. The root will have no parent, other nodes each have 1 parent.
+- Work backwards, add an edge to a directed tree.
+- The added edge points to either the root or a child node. Always creating 1 undirected loop.
+- Find the undirected loop? Not easy.
+- If the added edge points to a child node, there will be 1 node with 2 parents. (Case 1)
+- If the added edge points to the root, all nodes will have 1 parent. (Case 2)
+- For Case 1, find the node with 2 parents, removing the edge from either parent can create a directed tree.
+- For Case 2, the shape is a unidirectional loop with trees growing from its nodes. Trace back from any node to detect the loop, then, breaking any of its edges can create a directed tree.
+
+## 679. Calculate 24 given 4 numbers
+
+- 4 numbers having 24 permutations; 3 bracket structures; 64 operator combinations.
+- Brute force. Floating point numbers should work.
 
