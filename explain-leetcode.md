@@ -5,7 +5,7 @@ Given:
 - A random programmer on the Internet, that's me
 - Some less popular puzzles on LeetCode, a competitive programming website
 - A couple of minutes on each puzzle to have a workable idea
-- No TAOCP at hand
+- No TAOCP tome at hand
 
 This is how one programmer approaches the puzzles.
 
@@ -17,12 +17,12 @@ In the spirit of: [Obvious, by Abstruse Goose](https://abstrusegoose.com/230)
 
 Ongoing.
 
-## Tricks applied so far
+## Trophies
 
 - Basic data structures
 - Decompose a thing into smaller things
 - Do it incrementally
-- Induction, build on top of a simpler problem
+- Induction, build on top of a lesser problem
 - Remove the trivial
 - Sorting
 - Try basic examples
@@ -90,7 +90,7 @@ Just interval calculation. A sorted set of pairs, each having a count.
 - But this doesn't accumulate, working from target "ab..." to target "abc..." will need backtracking.
 - So we should search in reverse instead, finding the nearest previous letter one by one.
 - No, searching in reverse has exactly the same problem.
-- So, go forward finding the first occurrence letter by letter, then, start from the last found letter, search letter by letter in reverse; this is a local minimum span.
+- So, go forward finding the first occurrence letter by letter, then, start from the last found letter, search letter by letter in reverse; that is a local minimum span.
 - Move forward by 1 letter.
 - Repeat, forward-then-backward each time.
 
@@ -102,11 +102,11 @@ An expression evaluator.
 
 - Doubly linked list, so that it is fast to remove "max" in the middle.
 - Each element has an extra pointer to the previous "max".
-- Then push and pop are good, easy to find the max.
+- Then "push" and "pop" are good, also easy to find the max.
 - However, an evil example: push from large to small, pop-max one by one.
 - After pop-max, it is slow to update all the extra pointers.
 - Need a sorted map to look up the last position of each unique element, including the max.
-- The extra pointer points to the previous equal value.
+- The extra pointer points to the previous equal value instead.
 
 ## 715. Interval arithmetic
 
@@ -148,6 +148,25 @@ A sorted set of pairs.
 
 ## 679. Calculate 24 given 4 numbers
 
-- 4 numbers having 24 permutations; 3 bracket structures; 64 operator combinations.
+- 4 numbers having 24 permutations; 3 bracket structures; 64 permutations of operators.
 - Brute force. Floating point numbers should work.
+
+## 668. Find the *n*th-largest number in a multiplication table
+
+- Plot in 3 dimensions. It is a oblique plane. No, a curved surface.
+- Back to 2 dimensions. Plot the table as a lattice, draw contour lines "x * y = z" for different "z" values.
+- More or less: there is a contour line cutting the table into two halves, that the down-left half has area "n"... (Line 1)
+- More precisely, find the exact contour line passing through lattice points, and that the total number of lattice points on its left, plus those on it, first exceeds "n".
+- Start from Line 1. Calculate its position using a little ...calculus. Got its "z" value.
+- Walk through Line 1 down the table, calculate the number of lattice points on its left, and those on it, sum.
+- If the sum is too small or too large, move "z" up or down accordingly, repeat.
+- Speedup: only walk once, record the point immediately on the left, and those on the right, sort both by "z" values. Not proven, though.
+- And maybe there is just a formula...
+
+## 660. The *n*th positive decimal not containing "9"
+
+- Below 10 it is 0 to 8. Below 100 it repeats below-10, minus 90 to 99. A recursive calculation.
+- Looks like a Cantor set. Maybe there is a formula?
+
+(How many do they borrow from Project Euler?)
 
