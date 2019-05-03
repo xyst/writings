@@ -90,9 +90,9 @@ Just interval calculation. A sorted set of pairs, each having a count.
 - But this doesn't accumulate, working from target "ab..." to target "abc..." will need backtracking.
 - So we should search in reverse instead, finding the nearest previous letter one by one.
 - No, searching in reverse has exactly the same problem.
-- So, go forward finding the first occurrence letter by letter, then, start from the last found letter, search letter by letter in reverse; that is a local minimum span.
-- Move forward by 1 letter.
-- Repeat, forward-then-backward each time.
+- So, go forwards finding the first occurrence letter by letter, then, start from the last found letter, search letter by letter in reverse; that is a local minimum span.
+- Move forwards by 1 letter.
+- Repeat, forwards-then-backwards each time.
 
 ## 726. Count the atoms in a chemical formula
 
@@ -141,10 +141,10 @@ A sorted set of pairs.
 - Work backwards, add an edge to a directed tree.
 - The added edge points to either the root or a child node. Always creating 1 undirected loop.
 - Find the undirected loop? Not easy.
-- If the added edge points to a child node, there will be 1 node with 2 parents. (Case 1)
-- If the added edge points to the root, all nodes will have 1 parent. (Case 2)
-- For Case 1, find the node with 2 parents, removing the edge from either parent can create a directed tree.
-- For Case 2, the shape is a unidirectional loop with trees growing from its nodes. Trace back from any node to detect the loop, then, breaking any of its edges can create a directed tree.
+- If the added edge points to a child node, there will be 1 node with 2 parents. (Case A)
+- If the added edge points to the root, all nodes will have 1 parent. (Case B)
+- For Case A, find the node with 2 parents, removing the edge from either parent can create a directed tree.
+- For Case B, the shape is a unidirectional loop with trees growing from its nodes. Trace back from any node to detect the loop, then, breaking any of its edges can create a directed tree.
 
 ## 679. Calculate 24 given 4 numbers
 
@@ -155,12 +155,12 @@ A sorted set of pairs.
 
 - Plot in 3 dimensions. It is a oblique plane. No, a curved surface.
 - Back to 2 dimensions. Plot the table as a lattice, draw contour lines "x * y = z" for different "z" values.
-- More or less: there is a contour line cutting the table into two halves, that the down-left half has area "n"... (Line 1)
+- More or less: there is a contour line cutting the table into two halves, that the down-left half has area "n"... (Line A)
 - More precisely, find the exact contour line passing through lattice points, and that the total number of lattice points on its left, plus those on it, first exceeds "n".
-- Start from Line 1. Calculate its position using a little ...calculus. Got its "z" value.
-- Walk through Line 1 down the table, calculate the number of lattice points on its left, and those on it, sum.
+- Start from Line A. Calculate its position using a little... calculus. Got its "z" value.
+- Walk along Line A down the table, calculate the number of lattice points on its left, and those on it, sum.
 - If the sum is too small or too large, move "z" up or down accordingly, repeat.
-- Speedup: only walk once, record the point immediately on the left, and those on the right, sort both by "z" values. Not proven, though.
+- Speedup: only walk once, record the point immediately on the left/right, sort both by "z" values, then use them to amend the result. Not proven, though.
 - And maybe there is just a formula...
 
 ## 660. The *n*th positive decimal not containing "9"
@@ -169,4 +169,52 @@ A sorted set of pairs.
 - Looks like a Cantor set. Maybe there is a formula?
 
 (How many do they borrow from Project Euler?)
+
+## 656. Minimum total score to jump to the destination on a line, given the maximum single-jump length
+
+Induction. The minimum total score from Point 1 to Point N, for each N.
+
+## 644. Max segment average, given the minimum segment length
+
+- Think in calculus. Plot the "integration" as a curve.
+- Then the task is to find the deepest slope, given the minimum horizontal length.
+- Use an array of angles? Does not accumulate... It is inherently 2-dimensional.
+- Some examples: convex, concave, "\\/\\/\\/" shape, "\\\\" shape.
+- Is the convex closure useful for an incremental search? Not much.
+- Begin from the maximum point and search leftwards? First skip the minimum-length window, then look leftwards for the deepest slope.
+- It is either the first point we look (Point A), or another Point B on A's left with the deepest slope to A. To find that point, maybe walk leftwards and check each new minimum.
+- Afterwards, go right, begin from the next-maximum point and repeat? But then, ">" shape will be slow.
+- More examples. It does not necessarily involve the global maximum. Not necessarily a local maximum either. Need to search leftwards from each point instead.
+- If we already know the deepest slope _to_ each point? Will solve the problem.
+- So, can we calculate the deepest slope _to_ each point? Firstly scan from Point 1 to others, mark those in its line-of-sight... An evil example will be a concave curve...
+- Doesn't matter. For each new point, only need to check its previous point (Point P), and then check the one point with the deepest slope to Point P.
+- Maybe it is obvious in 4 dimensions...
+
+## 642. Auto-complete
+
+Only 100 items, use a sorted map.
+
+## 639. Letters turned into 1 to 26, then concatenated without spacing, then some digits become almost illegible; count the possible original strings
+
+- Unclear specification... From the last example we guess what it tries to say.
+- Recursion. From left to right, given the first digit, recursion on the rest, add up the few cases. Need two functions.
+- To speed up, iterate from right to left instead.
+- Why add 7 in the end?
+
+## 632. Use a range to cover at least one number from each sorted array, find the shortest then lowest range
+
+- Unspecified: how long are the arrays? Assume they are huge.
+- The arrays can be sparse, and can have big "holes" in the middle. A range can fall through the "hole" and miss.
+- The largest covering range is the smallest first number and the largest last number.
+- Scan from left to right? Numbers from each array come and go... Not sure.
+- If we plot the range-begin as X and the range-end as Y and calculate the coverage rate at each point? Not working...
+- Scan from left to right. First, move the range-end rightwards until all arrays are covered. Use a vector to track the in-range element count of each array. Then, move the range-begin rightward... Until the coverage is broken. We get one local shortest range.
+- Repeat, move range-end until full coverage, move range-begin until coverage broken, update the record.
+
+## 631. Spreadsheet with formulas
+
+- Translate the spec into code.
+- Underlying, a directly acyclic graph of updates.
+- Need to update layer by layer. Example: a -> b, a -> c, (a, b, c) -> d. Therefore need to maintain the layer index?
+- Doesn't matter. Just spread all the changes in whatever order. (That's why it's called a spreadsheet?)
 
