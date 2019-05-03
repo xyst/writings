@@ -111,7 +111,7 @@ Also, `strace java Sum` doesn't show "libgmp", so OpenJDK Java doesn't use the G
 - C, 8 seconds
 - Racket, 6 seconds (even without compiling)
 
-Now dig further...
+Now digging further...
 
 ## Basic Haskell profiling
 
@@ -200,7 +200,7 @@ So the Core says:
 - Then call GMP plus and minus
 - Then recursion
 
-Some of these are slow.
+Some of them are slow.
 
 ## Apples and oranges
 
@@ -296,4 +296,85 @@ So, the boolean matching is gone, and the minus is a fast primitive.
 - C, 8 seconds
 - Racket, 6 seconds (even without compiling)
 
+## Why not use two Int's?
+
+The sum 762078938126809995 is well within 64 bits. We may as well use 64-bit integers for both "i" and "s". Then:
+
+- Racket, 3 seconds (using "racket/fixnum" operators "fx-" and "fx+")
+- Haskell, 1 second (using "Int -> Int -> Int")
+- Java, 1 second (using "long" instead of "BigInteger")
+- C, 0 seconds (using "unsigned long" instead of GMP library)
+
+This is a little boring, CPUs today can add up _billions_ of integers within a second. (Though not fast enough to run Electron apps...)
+
+Racket is a bit slower in this case. C is blazingly fast.
+
+## What if the result exceeds 64-bit?
+
+Let's make the result bigger by adding from 44433322211.
+
+Racket:
+
+~~~
+#lang racket/base
+(define (sum i j s)
+  (if (> i j) s (sum (+ i 1) j (+ i s))) )
+(define begin 444333222111)
+(sum begin (+ begin 1234567890) 0)
+~~~
+
+Haskell:
+
+~~~
+sum :: Int -> Int -> Integer -> Integer
+sum i j s
+  | i > j = s
+  | otherwise = Main.sum (i + 1) j (fromIntegral i + s)
+begin = 444333222111
+main = print (Main.sum begin (begin + 1234567890) 0)
+~~~
+
+Java:
+
+~~~
+import java.math.BigInteger;
+
+class Sum {
+  public static void main(String[] args) {
+    var s = BigInteger.valueOf(0);
+    long begin = 444333222111L;
+    for (long i = begin; i <= begin + 1234567890; ++i)
+      s = s.add(BigInteger.valueOf(i));
+    System.out.println(s);
+  }
+}
+~~~
+
+C:
+
+~~~
+#include <stdio.h>
+#include <gmp.h>
+
+int main(void) {
+  mpz_t s;
+  mpz_init(s);
+  unsigned long begin = 444333222111L;
+  for (unsigned long i = begin; i <= begin + 1234567890; ++i)
+    mpz_add_ui(s, s, i);
+  gmp_printf("%Zd\n", s);
+  return 0;
+}
+~~~
+
+The answers are all 549321607860938647896. The timings:
+
+- Racket, 86 seconds (previously: 6 seconds)
+- Haskell, 49 seconds (previously: 20 seconds)
+- Java, 31 seconds (previously: 28 seconds)
+- C, 7 seconds (previously: 8 seconds)
+
+This is interesting. Only Java looks normal.
+
 ## Next
+
