@@ -1,7 +1,10 @@
 *.class
 *.core
+*.decompile
 *.elf
 *.hi
 *.o
 *.stderr
+*.zo
 .*.swp
+/compiled/

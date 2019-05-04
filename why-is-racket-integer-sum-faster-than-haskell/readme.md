@@ -311,7 +311,7 @@ Racket is a bit slower in this case. C is blazingly fast.
 
 ## What if the result exceeds 64-bit?
 
-Let's make the result bigger by adding from 44433322211.
+Let's make the result bigger by adding from 444333222111.
 
 Racket:
 
