@@ -8,3 +8,5 @@
 
 [Why is racket integer sum faster than Haskell](why-is-racket-integer-sum-faster-than-haskell/readme.md)
 
+(End of text)
+
