@@ -20,6 +20,7 @@ Ongoing.
 ## Trophies
 
 - Basic data structures
+- Compare and swap
 - Decompose a thing into smaller things
 - Do it incrementally
 - Induction, build on top of a lesser problem
@@ -222,12 +223,24 @@ Only 100 items, use a sorted map.
 
 - The end result will look like... A ladder shape of task lengths, one after another; and a dented shape of deadlines behind them.
 - No point to idle between two tasks.
-- Sort the result by the deadline? If two adjacent tasks (Task A before Task B) have Deadline A > Deadline B, we can swap them without violating their deadlines. And by means of bubble sort, we can sort the whole result by the deadline.
-- So, sort all the tasks by the deadline, drop some, so will be the result.
+- Sort the result by the deadline? If two adjacent tasks (Task A before Task B) have Deadline A > Deadline B, we can swap them without violating their deadlines. By means of bubble sort, we can sort the whole result.
+- So, sort all the tasks by the deadline, drop some, then will be the result.
 - So, go through each task, either keep or drop it, iterate? Need to keep track of "how long for how many tasks, at best" in a map.
 - No, it's slow for some examples.
 - Sort by the length instead?
 - Consider the first task in the result. It can always be replaced by a shorter task without problems. Then, by induction, yes.
 - Sort by length; take the first task, or drop if cannot meet its deadline, repeat.
 - May be useful one day.
+
+## 629. Count those permutations which have a given number of pairwise inversions
+
+- Good old combinatorics. An easy recursive function, or an iteration. But the speed...
+- However, the requested number of inversions is "small". At most need to calculate less than a million numbers.
+- That is, about half a billion additions and a million moduli. May be fine for the C language on a 64-bit machine.
+
+## 600. Count those binary numbers which do not contain "11", below an upper bound
+
+- Recursion by the length.
+- Slow down when approximating the upper bound, bit by bit.
+
 
