@@ -34,7 +34,7 @@ Ongoing.
 - Always read the "Note" section, size constraints can change the game.
 - "eerie" is a "subsequence" of "exercise".
 
-## 761. Shuffle "special" substrings (whose 1-count "=" 0-count, and ">=" for all prefixes)
+## 761. Shuffle adjacent "special" substrings (whose 1-count "=" 0-count, and ">=" for all prefixes) to maximise the string
 
 - When can we break a "special" string into two smaller ones...
 - "1100" contains "10" in the middle, but such case doesn't matter.
@@ -82,7 +82,7 @@ Just translate the spec into code. A simple expression evaluator.
 
 Just interval calculation. A sorted set of pairs, each having a count.
 
-## 727. Subsequence with the shortest span
+## 727. Subsequence occurrence with the shortest span
 
 - Build an index for each letter.
 - Search letter by letter using the index.
@@ -201,7 +201,7 @@ Only 100 items, use a sorted map.
 - To speed up, iterate from right to left instead.
 - Why add 7 in the end?
 
-## 632. Use a range to cover at least one number from each sorted array, find the shortest then lowest range
+## 632. Use a range to cover at least one number from each sorted array, minimise the range
 
 - Unspecified: how long are the arrays? Assume they are huge.
 - The arrays can be sparse, and can have big "holes" in the middle. A range can fall through the "hole" and miss.
@@ -217,4 +217,17 @@ Only 100 items, use a sorted map.
 - Underlying, a directly acyclic graph of updates.
 - Need to update layer by layer. Example: a -> b, a -> c, (a, b, c) -> d. Therefore need to maintain the layer index?
 - Doesn't matter. Just spread all the changes in whatever order. (That's why it's called a spreadsheet?)
+
+## 630. Schedule as many one-off tasks as possible, no overlapping, each task having a length and a deadline
+
+- The end result will look like... A ladder shape of task lengths, one after another; and a dented shape of deadlines behind them.
+- No point to idle between two tasks.
+- Sort the result by the deadline? If two adjacent tasks (Task A before Task B) have Deadline A > Deadline B, we can swap them without violating their deadlines. And by means of bubble sort, we can sort the whole result by the deadline.
+- So, sort all the tasks by the deadline, drop some, so will be the result.
+- So, go through each task, either keep or drop it, iterate? Need to keep track of "how long for how many tasks, at best" in a map.
+- No, it's slow for some examples.
+- Sort by the length instead?
+- Consider the first task in the result. It can always be replaced by a shorter task without problems. Then, by induction, yes.
+- Sort by length; take the first task, or drop if cannot meet its deadline, repeat.
+- May be useful one day.
 
