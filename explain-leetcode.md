@@ -45,7 +45,7 @@ Ongoing.
 
 ## 759. When does everyone have free time
 
-Just interval calculation. A sorted set of pairs.
+Interval calculation. A sorted set of pairs.
 
 ## 757. Cover two points in each interval
 
@@ -72,16 +72,16 @@ De Brujin sequence.
 
 ## 745. Prefix-and-suffix search
 
-- Just prefix trees?
+- Prefix trees?
 - Prefixes -> (suffixes -> last position)
 
 ## 736. Lisp expression
 
-Just translate the spec into code. A simple expression evaluator.
+Translate the spec into code. A simple expression evaluator.
 
 ## 732. Calendar overlap count
 
-Just interval calculation. A sorted set of pairs, each having a count.
+Interval calculation. A sorted set of pairs, each having a count.
 
 ## 727. Subsequence occurrence with the shortest span
 
@@ -243,4 +243,19 @@ Only 100 items, use a sorted map.
 - Recursion by the length.
 - Slow down when approximating the upper bound, bit by bit.
 
+## 591. XML validator
+
+Translate the spec into code. A stack, and a state machine for different parsing modes.
+
+## 588. Simulate files and directories
+
+Prefix tree.
+
+## 587. Convex closure of lattice points
+
+- First find the bounding box. Then only keep the first/last points of each row, together with the first/last rows.
+- Need to "circle" around the area to wrap it. But how?
+- Break the points into 4 segments, each segment touches the bounding box at its beginning and end.
+- Work clockwise on an segment. Start from Point 1, find the (nearest) point with the max slope to Point 1. Mark it as Point 2. Repeat.
+- Special cases: less than 4 segments, points on the bounding box.
 
