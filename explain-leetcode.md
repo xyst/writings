@@ -24,6 +24,7 @@ Ongoing.
 - Decompose a thing into smaller things
 - Do it incrementally
 - Induction, build on top of a lesser problem
+- Layer by layer
 - Remove the trivial
 - Sorting
 - Try basic examples
@@ -200,7 +201,6 @@ Only 100 items, use a sorted map.
 - Unclear specification... From the last example we guess what it tries to say.
 - Recursion. From left to right, given the first digit, recursion on the rest, add up the few cases. Need two functions.
 - To speed up, iterate from right to left instead.
-- Why add 7 in the end?
 
 ## 632. Use a range to cover at least one number from each sorted array, minimise the range
 
@@ -258,4 +258,56 @@ Prefix tree.
 - Break the points into 4 segments, each segment touches the bounding box at its beginning and end.
 - Work clockwise on an segment. Start from Point 1, find the (nearest) point with the max slope to Point 1. Mark it as Point 2. Repeat.
 - Special cases: less than 4 segments, points on the bounding box.
+
+## 568. "Maximise vacation"
+
+- No work ethic?
+- A directed graph?
+- Rephrase the problem: a directed graph of layers, same number of nodes in each layer, and same set of arrows between each two adjacent layers, nodes have different scores; maximise the total score from the starting node to the last layer.
+- From the starting node down, only keep the reachable arrows.
+- Layer by layer, calculate the maximum score getting to each node.
+
+## 564. The nearest (smallest) palindrome number from a given number
+
+- Palindrome numbers can be cut in halves. Increase or decrease the left half by one, that's the next/previous palindrome number.
+- That is, when they have the same length. Numbers like 10001 and 99999 are the first and the last.
+- Cut the given number by half, mirror image the half to get a palindrome, then find the other palindrome on the other side of the given number, compare the distances, pick.
+- Special case: given 10000.
+
+## 552. Count the trit strings with at most one "1" and at most two "2"s, given the length
+
+- Induction on the length. But this is slow.
+- Simple combinatorics, six cases.
+
+## 527. Unambiguous abbreviation of each among the given words; "apple" can become "a3e" or "ap2e"
+
+- Convert "apple" into (5, "e", "appl"), that is, the length, the last letter, and the prefix word.
+- Group by the length and the last letter.
+- For each group of prefix words, sort.
+- Go down the group, mark where each word differs from the previous word above.
+- Now we have a dented shape... When the mark goes left, it is easy; but when it goes right...
+- Not exactly. Also need to go up and mark the difference against the word below?
+- Not needed. Each word has two marks against the two adjacent words, pick the longer one, abbreviate up to there.
+
+## 517. Share items among a line of boxes so that the boxes end up with the same number of items, minimise the number of rounds; each round each box can pass 1 item to an adjacent box
+
+- If the number of boxes divides the number of items, this can be done, at least by (slowly) passing one item at a time.
+- Some examples...
+- No point to pass items _both_ from Box A to Box B _and_ from Box B to Box A, which wastes 2 rounds doing nothing.
+- Draw the initial boxes as a histogram, draw a line at the average number. Then need to move the items above the line into the "holes" below.
+- It is deterministic which items get into which hole. Start from the first hole on the left, draw from the leftmost available items until the hole is filled, repeat.
+- Now we know, for each "column" of items in the histogram (above the average line), which holes it fills, and how deep they are.
+- Now need to minimise the number of rounds, for each column. That is, how long the "last" item takes to get into its destination.
+- Example: 2 -1 -1. Example: -5 10 -5. Another example: -1 0 0 0 0 0 3 -2. There is no simple rule to tell which item is the "last".
+- Work backwards? Turn it upside-down so that the items in the holes flows into one column. Doesn't work...
+- In some cases, holes "delays" each other. For example -5 -5 0 10.
+- Draw each hole as a line, first draw its distance from the column, followed by it depth. We get a picture of "parallelism".
+- When two "depths" overlap, there will be delays.
+- Sort by the beginning of the depth. Check the first hole line, if its depth overlaps with the next line's, then move the next line's depth rightwards. Repeat. The end of the last depth is the answer (for the one column). Repeat on those columns which fills two or more holes.
+
+## 514. "Dial" a sequence of numbers using a ring of numbers, minimise the total movement
+
+- The extra "enter" button doesn't matter.
+- A directed graph of layers, minimise the total cost to move to last layer.
+- Layer by layer, calculate the minimum cost to get to each desired number.
 
