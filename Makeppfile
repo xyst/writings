@@ -1,0 +1,6 @@
+global signature md5
+
+%.html : %.md
+  pandoc $(input) -o $(output)
+
+$(phony all) : *.html */*.html
