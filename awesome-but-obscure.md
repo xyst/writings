@@ -12,5 +12,8 @@ __Ragel__ compiles finite-state machines into C code without dependencies; other
 __ShellCheck__ helps you to write robust shell scripts.  
 <https://github.com/koalaman/shellcheck>
 
-__WordNet__ is a best English dictionary to look for.
+__Supermin__ creates standalone applications from Debian packages, useful for container images.  
+<https://people.redhat.com/~rjones/supermin>
 
+__WordNet__ is a best English dictionary to look for.  
+<https://wordnet.princeton.edu>
