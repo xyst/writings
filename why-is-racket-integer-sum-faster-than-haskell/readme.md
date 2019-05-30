@@ -73,7 +73,7 @@ int main(void) {
 GMP version: libgmp10 2:6.1.2+dfsg-1 (no idea what it means)  
 GCC version: 6.3.0
 
-Compiled with `gcc -O2 -lgmp`, `ldd` reports `libgmp.so.10` just like Haskell, `time` reports 8 seconds to run.
+Compiled with `gcc -Wall -O2 -lgmp`, `ldd` reports `libgmp.so.10` just like Haskell, `time` reports 8 seconds to run.
 
 GMP is not slow.
 
@@ -206,7 +206,7 @@ Some of them are slow.
 
 A usual thing to check is Integer versus Int. In Java we are adding a BigInteger and an "int", while in Haskell we are adding two Integer's.
 
-Integer (and BigInteger) is arbitrary-precision, while Int (and "int") is 64-bit on this machine. Integer is the mathematical integer, while Int wraps around modulo (2 ^ 64) on this machine.
+Integer (and BigInteger in Java) is arbitrary-precision, while Int (and "int" in Java) is 64-bit on this machine. Integer is the mathematical integer, while Int wraps around modulo (2 ^ 64) on this machine.
 
 To see their difference, in `ghci` interpreter:
 
@@ -283,11 +283,10 @@ Remember the Core before:
 Now it says:
 
 - Match "i" with 0 to check if finished
-- Then call primitive minus
-- Then call GMP plus and "smallInteger"
+- Then call primitive minus, then GMP plus and "smallInteger"
 - Then recursion
 
-So, the boolean matching is gone, and the minus is a fast primitive.
+So, the boolean matching is gone, and the minus is on a fast primitive.
 
 ## What we have so far
 
@@ -296,9 +295,11 @@ So, the boolean matching is gone, and the minus is a fast primitive.
 - C, 8 seconds
 - Racket, 6 seconds (even without compiling)
 
-## Why not use two Int's?
+## But why not use two Int's?
 
-The sum 762078938126809995 is well within 64 bits. We may as well use 64-bit integers for both "i" and "s". Then:
+The sum 762078938126809995 is less than 64 bits. We may as well use 64-bit integers for both "i" and "s".
+
+Then:
 
 - Racket, 3 seconds (using "racket/fixnum" operators "fx-" and "fx+")
 - Haskell, 1 second (using "Int -> Int -> Int")
@@ -376,5 +377,69 @@ The answers are all 549321607860938647896. The timings:
 
 This is interesting. Only Java looks normal.
 
-## Next
+## The bytecode
 
+Racket compiles the code into bytecode before execution. Is there a way to read the bytecode like we read the GHC Core?
+
+Unable to find out how, but a few searches in the documentation shows we can compile into bytecode and then decompile it:
+
+~~~
+raco make sum.rkt
+raco decompile compiled/sum_rkt.zo
+~~~
+
+The documentation hints that decompilation does not "de-optimise" the code.
+
+So let's compare them. To make things easier, changed the code of the smaller sum so that the difference is just one line.
+
+The smaller sum:
+
+~~~
+#lang racket/base
+(define (sum i j s)
+  (if (> i j) s (sum (+ i 1) j (+ i s))) )
+(define begin 0)
+(sum begin (+ begin 1234567890) 0)
+~~~
+
+(Yes, still takes 6 seconds.)
+
+The bigger sum:
+
+~~~
+#lang racket/base
+(define (sum i j s)
+  (if (> i j) s (sum (+ i 1) j (+ i s))) )
+(define begin 444333222111)
+(sum begin (+ begin 1234567890) 0)
+~~~
+
+(Which takes 86 seconds.)
+
+The decompiled code are both two hundred lines, but the only lines that differ are:
+
+~~~
+   (define-values (begin) '0)
+   (#%apply-values print-values (sum '14 '1234567890 '91))
+~~~
+
+versus:
+
+~~~
+   (define-values (begin) '444333222111)
+   (#%apply-values print-values (sum '444333222125 '445567790001 '6220665109645))
+~~~
+
+That is, the bytecode are essentially the same.
+
+The Racket runtime somehow did a huge optimisation for the smaller sum.
+
+## The Just-In-Time compiler
+
+The Racket documentation provides great built-in searching. There is a section on "Fixnum and Flonum Optimizations", which explains that the Just-In-Time (JIT) compiler automatically uses machine-sized integers when applicable. And JIT compiling happens during runtime.
+
+So the JIT compiler probably "cheated" the smaller sum by using 64-bit integers instead of arbitrary-precision integers, making it faster than C language.
+
+To test this, turn off the JIT compiler by using `racket --no-jit sum.rkt`... Now it takes 203 seconds, instead of 6.
+
+## Next
