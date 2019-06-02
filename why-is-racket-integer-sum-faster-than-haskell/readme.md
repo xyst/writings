@@ -2,7 +2,7 @@
 
 ## Status
 
-Unfinished, and not entirely correct.
+Down the rabbit hole, and not entirely correct.
 
 ## The story
 
@@ -368,7 +368,7 @@ int main(void) {
 }
 ~~~
 
-The answers are all 549321607860938647896. The timings:
+The answers are all 549321607860938647896. The (unscientific) timings:
 
 - Racket, 86 seconds (previously: 6 seconds)
 - Haskell, 49 seconds (previously: 20 seconds)
@@ -381,16 +381,16 @@ This is interesting. Only Java looks normal.
 
 Racket compiles the code into bytecode before execution. Is there a way to read the bytecode like we read the GHC Core?
 
-Unable to find out how, but a few searches in the documentation shows we can compile into bytecode and then decompile it:
+Yet to find out how... But a few searches in the documentation shows we can compile into bytecode and then _decompile_ it:
 
 ~~~
 raco make sum.rkt
 raco decompile compiled/sum_rkt.zo
 ~~~
 
-The documentation hints that decompilation does not "de-optimise" the code.
+The documentation also hints that decompilation does not "de-optimise" the code.
 
-So let's compare them. To make things easier, changed the code of the smaller sum so that the difference is just one line.
+To make them easier to compare, changed the smaller sum code so that the only difference is one line.
 
 The smaller sum:
 
@@ -416,7 +416,7 @@ The bigger sum:
 
 (Which takes 86 seconds.)
 
-The decompiled code are both two hundred lines, but the only lines that differ are:
+The decompiled code are both two hundred lines, and the only lines that differ are:
 
 ~~~
    (define-values (begin) '0)
@@ -436,10 +436,189 @@ The Racket runtime somehow did a huge optimisation for the smaller sum.
 
 ## The Just-In-Time compiler
 
-The Racket documentation provides great built-in searching. There is a section on "Fixnum and Flonum Optimizations", which explains that the Just-In-Time (JIT) compiler automatically uses machine-sized integers when applicable. And JIT compiling happens during runtime.
+The Racket documentation provides great built-in searching. There is a section "Fixnum and Flonum Optimizations" explaining that the Just-In-Time (JIT) compiler automatically uses machine-sized integers when applicable. And JIT compiling happens during runtime.
 
-So the JIT compiler probably "cheated" the smaller sum by using 64-bit integers instead of arbitrary-precision integers, making it faster than C language.
+So the JIT compiler probably "cheated" the smaller sum by using 64-bit integers instead of arbitrary-precision integers, making it faster than the C language.
 
-To test this, turn off the JIT compiler by using `racket --no-jit sum.rkt`... Now it takes 203 seconds, instead of 6.
+To test this, turn off the JIT compiler by using `racket --no-jit sum.rkt`... Now it takes 203 seconds, instead of 6!
+
+JIT is indeed the bread and buffer for high performance, but it does lots of things, how to know whether it avoided arbitrary-precision integers?
+
+## The source code
+
+Time to read the Racket source code. (Didn't expect my first Racket program to bring me here...)
+
+Using `apt-get source` to fetch the source code of Racket... In "src/racket/src" there is (their own copy of) GMP code in C language, and "jitarith.c" which does JIT compiling for integer arithmetics.
+
+Like the documentation says, "jitarith.c" checks the integer size and sets some flags whether to use machine-sized integers.
+
+Meanwhile "gmp.c" defines the "mpn_add_n" function that adds arbitrary-precision integers. Its real name, after "gmp.h" macro expansion, is likely "scheme_gmpn_add_n". There is also an inline function "mpn_add" which calls "mpn_add_n".
+
+Still need more digging to understand how the two work together, but for now, we have enough information to test our JIT hypothesis. Just find out whether "scheme_gmpn_add_n" is called.
+
+## The GNU debugger
+
+The GNU debugger (GDB) lets us inspect how a C executable runs.
+
+Launch Racket with `gdb racket`, set our breakpoint with `break scheme_gmpn_add_n` so that we know when the function is called, then `run sum.rkt`...
+
+~~~
+> gdb racket
+...
+Reading symbols from racket...(no debugging symbols found)...done.
+(gdb) break scheme_gmpn_add_n
+Breakpoint 1 at 0x9f7a0
+(gdb) run sum.rkt
+Starting program: /usr/bin/racket sum.rkt
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+(gdb)
+~~~
+
+It stops as "scheme_gmpn_add_n" gets called. Let's `continue` to see...
+
+~~~
+(gdb) continue
+Continuing.
+
+Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+(gdb) continue
+Continuing.
+[New Thread 0x7ffff7ff7700 (LWP 18455)]
+
+Thread 1 "sum.rkt" received signal SIGSEGV, Segmentation fault.
+0x00005555555fba1a in scheme_gmp_tls_unload ()
+(gdb) 
+~~~
+
+Oops. "scheme_gmpn_add_n" is called another time, and then... A segmentation fault? Usually it means that the C code has a memory corruption bug and has crashed. But it did run fine without the debugger! Why?
+
+## Heisenbug and the garbage collector
+
+Strangers on the Internet suggest a few causes. One is the well-known Heisenbug, that is the debugger affects how the program runs. Especially common for multithreaded programs and timers.
+
+Another cause is that some garbage collectors make creative use of segmentation faults to manage memory... Maybe Racket too? In this case, it is recommended to set `handle SIGSEGV nostop noprint` in the debugger.
+
+## Back to the debugger
+
+Putting things together, we can write a shell script to avoid timing problems and ignore segmentation faults.
+
+~~~
+#!/bin/bash
+set -euo pipefail
+gdb racket <<EOF
+handle SIGSEGV nostop noprint
+break scheme_gmpn_add_n
+command 1
+  print 123
+  continue
+end
+run sum.rkt
+EOF
+~~~
+
+The few lines after "command 1" means: when Breakpoint 1 (the only breakpoint) is reached, print something arbitrary (123), and continue to run.
+
+Let's try it on the smaller sum:
+
+~~~
+#lang racket/base
+(define (sum i j s)
+  (if (> i j) s (sum (+ i 1) j (+ i s))) )
+(define begin 0)
+(sum begin (+ begin 1234567890) 0)
+~~~
+
+The result:
+
+~~~
+> ./run-with-debugger.sh 
+...
+Reading symbols from racket...(no debugging symbols found)...done.
+(gdb) Signal        Stop  Print Pass to program Description
+SIGSEGV       No  No  Yes   Segmentation fault
+(gdb) Breakpoint 1 at 0x9f7a0
+(gdb) >>>(gdb) Starting program: /usr/bin/racket sum.rkt
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$1 = 123
+
+Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$2 = 123
+[New Thread 0x7ffff7ff7700 (LWP 19526)]
+762078938126809995
+[Thread 0x7ffff7ff7700 (LWP 19526) exited]
+[Inferior 1 (process 19522) exited normally]
+(gdb) quit
+~~~
+
+Yes! "scheme_gmpn_add_n" is only called twice.
+
+What about the bigger sum:
+
+~~~
+#lang racket/base
+(define (sum i j s)
+  (if (> i j) s (sum (+ i 1) j (+ i s))) )
+(define begin 444333222111)
+(sum begin (+ begin 1234567890) 0)
+~~~
+
+Lots and lots of printing... My estimation is that it'll take a month to finish.
+
+Changing the code to use a larger "begin" and fewer numbers instead:
+
+~~~
+#lang racket/base
+(define (sum i j s)
+  (if (> i j) s (sum (+ i 1) j (+ i s))) )
+(define begin 666555444333222111)
+(sum begin (+ begin 1234) 0)
+~~~
+
+The result:
+
+~~~
+> time ./run-with-debugger.sh 
+...
+Reading symbols from racket...(no debugging symbols found)...done.
+(gdb) Signal        Stop  Print Pass to program Description
+SIGSEGV       No  No  Yes   Segmentation fault
+(gdb) Breakpoint 1 at 0x9f7a0
+(gdb) >>>(gdb) Starting program: /usr/bin/racket sum.rkt
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$1 = 123
+
+Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$2 = 123
+[New Thread 0x7ffff7ff7700 (LWP 20741)]
+
+Thread 1 "sum.rkt" hit Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$3 = 123
+
+...
+
+Thread 1 "sum.rkt" hit Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$1229 = 123
+
+Thread 1 "sum.rkt" hit Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$1230 = 123
+
+Thread 1 "sum.rkt" hit Breakpoint 1, 0x00005555555f37a0 in scheme_gmpn_add_n ()
+$1231 = 123
+823195973751530069080
+[Thread 0x7ffff7ff7700 (LWP 20741) exited]
+[Inferior 1 (process 20737) exited normally]
+(gdb) quit
+~~~
+
+"scheme_gmpn_add_n" is called 1231 times.
 
 ## Next
