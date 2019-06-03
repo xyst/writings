@@ -448,19 +448,19 @@ JIT is indeed the bread and buffer for high performance, but it does lots of thi
 
 Time to read the Racket source code. (Didn't expect my first Racket program to bring me here...)
 
-Using `apt-get source` to fetch the source code of Racket... In "src/racket/src" there is (their own copy of) GMP code in C language, and "jitarith.c" which does JIT compiling for integer arithmetics.
+Using `apt-get source` to fetch the source... In "src/racket/src" there is (their own copy of) GMP code in C language, and "jitarith.c" which does JIT compiling for integer arithmetics.
 
 Like the documentation says, "jitarith.c" checks the integer size and sets some flags whether to use machine-sized integers.
 
 Meanwhile "gmp.c" defines the "mpn_add_n" function that adds arbitrary-precision integers. Its real name, after "gmp.h" macro expansion, is likely "scheme_gmpn_add_n". There is also an inline function "mpn_add" which calls "mpn_add_n".
 
-Still need more digging to understand how the two work together, but for now, we have enough information to test our JIT hypothesis. Just find out whether "scheme_gmpn_add_n" is called.
+Still need more digging to understand how the two pieces work together, but for now, we have enough information to test our JIT hypothesis. Just check whether "scheme_gmpn_add_n" is called.
 
 ## The GNU debugger
 
 The GNU debugger (GDB) lets us inspect how a C executable runs.
 
-Launch Racket with `gdb racket`, set our breakpoint with `break scheme_gmpn_add_n` so that we know when the function is called, then `run sum.rkt`...
+Launch Racket with `gdb racket`, set our breakpoint with `break scheme_gmpn_add_n` to know when the function is called, then `run sum.rkt`...
 
 ~~~
 > gdb racket
@@ -570,7 +570,7 @@ What about the bigger sum:
 
 Lots and lots of printing... My estimation is that it'll take a month to finish.
 
-Changing the code to use a larger "begin" and fewer numbers instead:
+Changing the code to use a larger "begin" and fewer numbers:
 
 ~~~
 #lang racket/base
@@ -621,4 +621,21 @@ $1231 = 123
 
 "scheme_gmpn_add_n" is called 1231 times.
 
+The Racket runtime does avoid arbitrary-precision arithmetics when the numbers are small.
+
+## Answering the original question
+
+Racket is faster than Haskell when adding up a billion numbers (which are under half a trillion), this is because the Just-In-Time compiler automatically uses machine-sized integer when applicable, which is much faster than using arbitrary-precision integers.
+
+Among Racket, Haskell, Java, and C, this seems unique to Racket.
+
+In Haskell/Java/C, we can choose _either_ 64-bit integers _or_ arbitrary-precision integers, that is, either be fast or be safe. When the choice changes, the code has to change.
+
+In Racket, it is the same code for _both_. The runtime makes the choice. In this way, Racket makes simple code run fast in the usual case, while staying safe in other cases.
+
+And, of course, there is a price to pay. For example, machine-sized integers in Racket is less than 64 bits on 64-bit machines. In the Haskell website, there are also a few relevant discussions on the GMP library and the trade-offs of "small integers".
+
+Now to the other findings...
+
 ## Next
+
